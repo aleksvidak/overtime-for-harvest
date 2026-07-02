@@ -354,9 +354,12 @@
       $("todayCaption").textContent = "No expected hours today";
     }
 
-    /* weekly chart */
+    /* weekly chart: bars and target line share the container baseline,
+       labels live in their own row below */
     var chart = $("weekChart");
-    chart.querySelectorAll(".day-col").forEach(function (n) { n.remove(); });
+    var labels = $("weekLabels");
+    chart.querySelectorAll(".day-bar").forEach(function (n) { n.remove(); });
+    labels.innerHTML = "";
     var names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     var week = [];
     var maxH = 10;
@@ -371,9 +374,6 @@
     $("targetLabel").textContent = fmtHM(dailyCapH) + " target";
 
     week.forEach(function (w) {
-      var col = document.createElement("div");
-      col.className = "day-col";
-
       var bar = document.createElement("div");
       bar.className = "day-bar";
       var label = document.createElement("span");
@@ -396,9 +396,8 @@
       }
       bar.title = w.name + ": " + fmtHM(w.hours);
 
-      col.appendChild(bar);
-      col.appendChild(label);
-      chart.appendChild(col);
+      chart.appendChild(bar);
+      labels.appendChild(label);
     });
 
     /* recent ledger: last tracked days before today */
