@@ -45,18 +45,54 @@ async function refresh() {
   }
 }
 
+/* The balance is drawn INTO the icon (no badge): a badge overlay is a fixed
+   size Chrome does not let us tune and it swamps a 16px icon. */
 function updateBadge(report) {
+  chrome.action.setBadgeText({ text: "" });
   if (!report || !report.months) {
-    chrome.action.setBadgeText({ text: "" });
+    chrome.action.setIcon({
+      path: { 16: "icons/icon16.png", 48: "icons/icon48.png", 128: "icons/icon128.png" }
+    });
     return;
   }
   var bal = HL.computeBalance(report);
   var h = HL.splitHM(bal).h;
-  var text = (bal < 0 ? "-" : "+") + (h > 99 ? "99+" : h + "h");
+  var text = h > 99 ? "99+" : (bal < 0 ? "-" : "+") + h;
   var color = Math.abs(bal) < 1 ? "#9A9083" : (bal < 0 ? "#B24A2E" : "#4C9A6A");
-  chrome.action.setBadgeText({ text: text });
-  chrome.action.setBadgeBackgroundColor({ color: color });
-  if (chrome.action.setBadgeTextColor) chrome.action.setBadgeTextColor({ color: "#FFFFFF" });
+
+  var imageData = {};
+  [16, 32].forEach(function (size) {
+    imageData[size] = drawTile(size, text, color);
+  });
+  chrome.action.setIcon({ imageData: imageData });
+}
+
+function drawTile(size, text, color) {
+  var c = new OffscreenCanvas(size, size);
+  var ctx = c.getContext("2d");
+
+  var r = size * 0.22;
+  ctx.beginPath();
+  ctx.moveTo(r, 0);
+  ctx.arcTo(size, 0, size, size, r);
+  ctx.arcTo(size, size, 0, size, r);
+  ctx.arcTo(0, size, 0, 0, r);
+  ctx.arcTo(0, 0, size, 0, r);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+
+  ctx.fillStyle = "#FFFFFF";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  var px = Math.round(size * 0.72);
+  do {
+    ctx.font = "700 " + px + "px sans-serif";
+    px--;
+  } while (px > 5 && ctx.measureText(text).width > size * 0.88);
+  ctx.fillText(text, size / 2, size / 2 + size * 0.04);
+
+  return ctx.getImageData(0, 0, size, size);
 }
 
 /* ── nudges: only from a fresh sync, one of each kind per day, workdays only ── */
