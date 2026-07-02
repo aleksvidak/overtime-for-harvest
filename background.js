@@ -1,10 +1,8 @@
-/* Background worker: keeps the toolbar badge showing the live balance and
-   nudges when a workday goes untracked. Read-only, same data layer as the popup. */
+/* Background worker: keeps the toolbar icon showing the live balance.
+   Read-only, same data layer as the popup. */
 importScripts("core.js");
 
 var SYNC_ALARM = "hl-sync";
-var NUDGE_KEY = "harvest_ledger_nudges";
-var NUDGE_NOTIFICATION = "hl-nudge";
 
 chrome.runtime.onInstalled.addListener(init);
 chrome.runtime.onStartup.addListener(init);
@@ -40,9 +38,8 @@ async function refresh() {
   try {
     var report = await HL.syncReport(creds, false);
     updateBadge(report);
-    await maybeNudge(report);
   } catch (e) {
-    /* keep the stale badge; never nudge off stale data */
+    /* keep the stale badge */
     var stored = await HL.stGet(HL.REPORT_KEY);
     updateBadge(stored);
   }
@@ -146,55 +143,3 @@ function drawTile(size, text, color) {
   return ctx.getImageData(0, 0, size, size);
 }
 
-/* ── nudges: only from a fresh sync, one of each kind per day, workdays only ── */
-async function maybeNudge(report) {
-  var now = new Date();
-  var dow = now.getDay();
-  if (dow === 0 || dow === 6) return;
-
-  var today = HL.iso(now);
-  var days = report.days || {};
-  var mins = now.getHours() * 60 + now.getMinutes();
-  var nudges = (await HL.stGet(NUDGE_KEY)) || {};
-
-  /* evening: nothing tracked today */
-  if (mins >= 17 * 60 + 30 && (days[today] || 0) < 0.02 && nudges.evening !== today) {
-    nudges.evening = today;
-    await HL.stSet(NUDGE_KEY, nudges);
-    notify("Nothing tracked today",
-        HL.fmtHM(report.dailyCapH) + " expected. Log your hours before you forget.");
-    return;   /* one nudge at a time is enough */
-  }
-
-  /* morning: the previous workday was left empty */
-  var prev = HL.prevWorkdayIso();
-  if (mins >= 9 * 60 + 30 && prev >= report.from
-      && (days[prev] || 0) < 0.02 && nudges.morning !== today) {
-    nudges.morning = today;
-    await HL.stSet(NUDGE_KEY, nudges);
-    var label = new Intl.DateTimeFormat("en", { weekday: "short", month: "short", day: "numeric" })
-        .format(HL.parseISO(prev));
-    notify("A timesheet day is empty",
-        "Nothing tracked on " + label + ". A minute now saves the scramble later.");
-  }
-}
-
-function notify(title, message) {
-  chrome.notifications.create(NUDGE_NOTIFICATION, {
-    type: "basic",
-    iconUrl: "icons/icon128.png",
-    title: title,
-    message: message
-  });
-}
-
-/* clicking a nudge opens Harvest's time page */
-chrome.notifications.onClicked.addListener(async function (id) {
-  if (id !== NUDGE_NOTIFICATION) return;
-  var report = await HL.stGet(HL.REPORT_KEY);
-  var url = report && report.company && report.company.full_domain
-      ? "https://" + report.company.full_domain + "/time"
-      : "https://harvestapp.com";
-  chrome.tabs.create({ url: url });
-  chrome.notifications.clear(NUDGE_NOTIFICATION);
-});

@@ -13,7 +13,6 @@ back to your first tracked day.
 - This week vs. capacity, today's progress toward expected hours
 - Monday-to-Sunday chart of the current week with your daily target
 - Recent tracked days with their over/under
-- Reminders when a workday ends untracked (evening) or was left empty (next morning)
 - Shortcuts to track time and open reports in Harvest
 
 ## Privacy

@@ -26,7 +26,6 @@ WHAT YOU SEE
 - Today's progress toward your expected hours
 - A Monday-to-Sunday chart of the current week with your daily target
 - Your most recent tracked days and their over/under
-- A gentle reminder if a workday is about to end untracked
 - One-click shortcuts to track time and open reports in Harvest
 
 PRIVACY BY DESIGN
@@ -51,10 +50,8 @@ against their expected working hours.
 **Permission justifications:**
 - `storage`: Stores the user's Harvest personal access token and cached aggregate hour totals
   locally so the balance loads instantly and closed years are not refetched.
-- `alarms`: Schedules a background sync every 30 minutes so the toolbar badge always shows the
+- `alarms`: Schedules a background sync every 30 minutes so the toolbar icon always shows the
   user's current overtime balance.
-- `notifications`: Shows a local reminder when a workday is ending (or has ended) with no time
-  tracked, so the user's timesheet does not fall behind. Nothing is sent anywhere.
 - Host permission `https://api.harvestapp.com/*`: Fetches the user's own time entries, profile,
   and company info from the official Harvest API. This is the only host the extension contacts.
 
