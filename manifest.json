@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Overtime for Harvest",
+  "version": "1.0.0",
+  "description": "See your overtime balance at a glance: tracked Harvest hours vs. expected, today's progress, and your week.",
+  "permissions": ["storage"],
+  "host_permissions": ["https://api.harvestapp.com/*"],
+  "content_security_policy": {
+    "extension_pages": "default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; connect-src https://api.harvestapp.com; img-src 'self'; base-uri 'none'; form-action 'none'"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

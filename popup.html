@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Overtime</title>
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+<!-- ── Main view ─────────────────────────── -->
+<div id="main" hidden>
+
+  <header>
+    <div class="brand">
+      <div class="logo"><i></i></div>
+      <span class="title">Overtime</span>
+    </div>
+    <div class="header-actions">
+      <button type="button" id="refresh" class="sync-btn" title="Sync with Harvest">
+        <span class="sync-icon" id="syncIcon">&#10227;</span>
+        <span class="sync-label" id="syncLabel"></span>
+      </button>
+      <button type="button" id="gear" class="kebab" title="Settings"><i></i><i></i><i></i></button>
+    </div>
+  </header>
+
+  <div id="errorBanner" hidden>
+    <p id="errorText"></p>
+    <div class="error-actions">
+      <button type="button" id="errSettings">Open settings</button>
+      <button type="button" id="errRetry">Retry</button>
+    </div>
+  </div>
+
+  <div id="results" hidden>
+
+    <!-- hero balance -->
+    <section class="hero">
+      <div class="hero-top">
+        <div class="hero-labels">
+          <span class="eyebrow">Current balance</span>
+          <span class="since" id="sinceLine"></span>
+        </div>
+        <span class="pill">All-time</span>
+      </div>
+      <div class="balance" id="balance"></div>
+      <div class="week-line">
+        <span class="chip" id="weekChip"></span>
+        <span class="week-caption">this week</span>
+      </div>
+    </section>
+
+    <!-- today -->
+    <section class="today-wrap">
+      <div class="today-card">
+        <div class="today-head">
+          <span class="today-title">Today</span>
+          <span class="today-nums" id="todayNums"></span>
+        </div>
+        <div class="progress"><div class="progress-fill" id="todayBar"></div></div>
+        <div class="today-caption" id="todayCaption"></div>
+      </div>
+    </section>
+
+    <!-- weekly chart -->
+    <section class="week-panel">
+      <div class="week-head">
+        <span class="week-title">This week</span>
+        <span class="legend"><span class="legend-dash"></span><span id="targetLabel"></span></span>
+      </div>
+      <div class="week-chart" id="weekChart">
+        <div class="target-line" id="targetLine"></div>
+      </div>
+    </section>
+
+    <!-- recent ledger -->
+    <section class="recent">
+      <div class="eyebrow">Recent</div>
+      <div id="recentList"></div>
+    </section>
+
+    <!-- footer actions -->
+    <section class="actions">
+      <a class="cta" id="trackLink" href="https://harvestapp.com" target="_blank" rel="noopener">
+        <span class="cta-plus">+</span> Track time for today
+      </a>
+      <a class="report-link" id="reportLink" href="https://harvestapp.com" target="_blank" rel="noopener">View full report &#8599;</a>
+    </section>
+
+  </div>
+</div>
+
+<!-- ── Settings overlay ──────────────────── -->
+<div id="settings" hidden>
+
+  <div class="settings-head">
+    <button type="button" id="back" class="back-btn" title="Back">&#8592;</button>
+    <span class="title">Settings</span>
+  </div>
+
+  <div class="settings-body">
+
+    <div class="eyebrow section-label">Harvest connection</div>
+
+    <div class="field">
+      <label for="accountId">Account ID</label>
+      <input type="text" id="accountId" placeholder="1234567" autocomplete="off">
+    </div>
+
+    <div class="field tight">
+      <label for="token">Personal access token</label>
+      <input type="password" id="token" placeholder="xxxxxxx.pt.xxxxxxxx..." autocomplete="off">
+    </div>
+    <div class="hint">Create both at
+      <a href="https://id.getharvest.com/developers" target="_blank" rel="noopener">id.getharvest.com/developers &#8599;</a>
+    </div>
+
+    <div class="conn-card" id="connCard">
+      <span class="conn-dot" id="connDot"></span>
+      <span class="conn-status" id="connStatus">Not connected</span>
+      <span class="conn-meta" id="connMeta"></span>
+      <button type="button" id="testConn">Test</button>
+    </div>
+
+    <div class="eyebrow section-label">Sync</div>
+
+    <div class="row-field">
+      <div class="row-text">
+        <span class="row-title">Entries per page</span>
+        <span class="row-sub">Rows fetched per Harvest request &middot; max 2000</span>
+      </div>
+      <input type="number" id="pageSize" min="1" max="2000" step="1" placeholder="2000">
+    </div>
+
+    <div class="eyebrow section-label data-label">Data</div>
+    <div class="hint">Hours are cached locally so the balance loads instantly. You can clear the
+      stored token and cached data at any time.</div>
+    <button type="button" id="resync" class="soft-btn">Resync all history</button>
+    <button type="button" id="forget" class="danger-btn">Forget token &amp; clear cached data</button>
+
+  </div>
+
+  <div class="settings-foot">
+    <button type="button" id="save" class="cta">Save &amp; sync</button>
+  </div>
+
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
