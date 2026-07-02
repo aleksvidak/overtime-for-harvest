@@ -515,10 +515,35 @@ input[type="password"] { letter-spacing: 0.08em; }
   gap: 12px;
   margin-bottom: 4px;
 }
-.row-text { display: flex; flex-direction: column; gap: 2px; }
+.row-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
 .row-title { font-size: 13px; font-weight: 600; color: var(--ink); }
 .row-sub { font-size: 11px; color: var(--muted-2); }
-.row-field input { width: 74px; text-align: center; flex: none; }
+.row-field input { width: 74px; text-align: center; flex: none; padding: 0 8px; }
+
+/* the spinner arrows do not fit a 74px field and clip the value */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+
+.seg {
+  display: flex;
+  border: 1px solid var(--border-input);
+  border-radius: 10px;
+  overflow: hidden;
+  flex: none;
+}
+.seg button {
+  border: none;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 11px;
+  border-right: 1px solid var(--border-input);
+}
+.seg button:last-child { border-right: none; }
+.seg button:hover { color: var(--ink); }
+.seg button.active { background: var(--accent-bg); color: var(--accent); }
 
 .soft-btn {
   display: flex;

@@ -9,7 +9,7 @@
     "service_worker": "background.js"
   },
   "content_security_policy": {
-    "extension_pages": "default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; connect-src https://api.harvestapp.com; img-src 'self'; base-uri 'none'; form-action 'none'"
+    "extension_pages": "default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; connect-src 'self' https://api.harvestapp.com; img-src 'self'; base-uri 'none'; form-action 'none'"
   },
   "action": {
     "default_popup": "popup.html",

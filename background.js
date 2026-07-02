@@ -20,11 +20,14 @@ chrome.alarms.onAlarm.addListener(function (alarm) {
   if (alarm.name === SYNC_ALARM) refresh();
 });
 
-/* the popup syncs through the same report key: repaint the badge on any change,
-   including when "forget" clears storage */
+/* the popup syncs through the same report key: repaint the icon on any change,
+   including when "forget" clears storage or the icon-style setting changes */
 chrome.storage.onChanged.addListener(function (changes, area) {
-  if (area === "local" && changes[HL.REPORT_KEY]) {
+  if (area !== "local") return;
+  if (changes[HL.REPORT_KEY]) {
     updateBadge(changes[HL.REPORT_KEY].newValue || null);
+  } else if (changes[HL.CREDS_KEY]) {
+    HL.stGet(HL.REPORT_KEY).then(updateBadge);
   }
 });
 
@@ -46,25 +49,73 @@ async function refresh() {
 }
 
 /* The balance is drawn INTO the icon (no badge): a badge overlay is a fixed
-   size Chrome does not let us tune and it swamps a 16px icon. */
-function updateBadge(report) {
+   size Chrome does not let us tune and it swamps a 16px icon. User-configurable:
+   "none" = plain logo, "dot" = logo with a state-colored corner dot,
+   "tile" = state-colored square with the signed hour count. */
+var DEFAULT_ICON = {
+  path: { 16: "icons/icon16.png", 48: "icons/icon48.png", 128: "icons/icon128.png" }
+};
+
+async function updateBadge(report) {
   chrome.action.setBadgeText({ text: "" });
   if (!report || !report.months) {
-    chrome.action.setIcon({
-      path: { 16: "icons/icon16.png", 48: "icons/icon48.png", 128: "icons/icon128.png" }
-    });
+    chrome.action.setIcon(DEFAULT_ICON);
+    return;
+  }
+  var creds = await HL.stGet(HL.CREDS_KEY);
+  var style = (creds && creds.iconStyle) || "dot";
+  if (style === "none") {
+    chrome.action.setIcon(DEFAULT_ICON);
     return;
   }
   var bal = HL.computeBalance(report);
-  var h = HL.splitHM(bal).h;
-  var text = h > 99 ? "99+" : (bal < 0 ? "-" : "+") + h;
   var color = Math.abs(bal) < 1 ? "#9A9083" : (bal < 0 ? "#B24A2E" : "#4C9A6A");
 
   var imageData = {};
-  [16, 32].forEach(function (size) {
-    imageData[size] = drawTile(size, text, color);
-  });
+  if (style === "dot") {
+    var logo = await getLogo();
+    [16, 32].forEach(function (size) {
+      imageData[size] = drawDot(size, logo, color);
+    });
+  } else {
+    var h = HL.splitHM(bal).h;
+    var text = h > 99 ? "99+" : (bal < 0 ? "-" : "+") + h;
+    [16, 32].forEach(function (size) {
+      imageData[size] = drawTile(size, text, color);
+    });
+  }
   chrome.action.setIcon({ imageData: imageData });
+}
+
+var logoBitmap = null;
+async function getLogo() {
+  if (logoBitmap) return logoBitmap;
+  var res = await fetch(chrome.runtime.getURL("icons/icon128.png"));
+  logoBitmap = await createImageBitmap(await res.blob());
+  return logoBitmap;
+}
+
+function drawDot(size, logo, color) {
+  var c = new OffscreenCanvas(size, size);
+  var ctx = c.getContext("2d");
+  ctx.drawImage(logo, 0, 0, size, size);
+
+  var r = size * 0.26;
+  var cx = size - r, cy = size - r;
+
+  /* punch a transparent gap so the dot reads on any toolbar theme */
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 1.4, 0, 2 * Math.PI);
+  ctx.fill();
+
+  ctx.globalCompositeOperation = "source-over";
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+  ctx.fill();
+
+  return ctx.getImageData(0, 0, size, size);
 }
 
 function drawTile(size, text, color) {

@@ -55,14 +55,35 @@
     rerun(true);
   });
 
-  /* ── settings: save, test, forget ── */
+  /* ── settings: icon style, save, test, forget ── */
+  var iconStyle = "dot";
+  var segBtns = document.querySelectorAll("#iconStyleSeg button");
+  function setSeg(v) {
+    iconStyle = v;
+    segBtns.forEach(function (b) { b.classList.toggle("active", b.dataset.v === v); });
+  }
+  segBtns.forEach(function (b) {
+    b.addEventListener("click", function () {
+      setSeg(b.dataset.v);
+      /* apply instantly: persisting the setting makes the worker repaint the icon */
+      HL.stGet(HL.CREDS_KEY).then(function (existing) {
+        if (existing && existing.token) {
+          existing.iconStyle = iconStyle;
+          HL.stSet(HL.CREDS_KEY, existing);
+        }
+      });
+    });
+  });
+  setSeg("dot");
+
   $("save").addEventListener("click", function () {
     HL.stGet(HL.CREDS_KEY).then(function (existing) {
       var creds = {
         accountId: $("accountId").value.trim(),
         /* blank token field means: keep the one already saved */
         token: $("token").value.trim() || (existing && existing.token) || "",
-        pageSize: HL.clampPageSize($("pageSize").value)
+        pageSize: HL.clampPageSize($("pageSize").value),
+        iconStyle: iconStyle
       };
       if (!creds.accountId || !creds.token) {
         setConn("err", "Missing details", "Account ID and token are both required");
@@ -130,6 +151,7 @@
       /* the saved token is never echoed back into the UI */
       $("token").placeholder = "saved · leave blank to keep";
       $("pageSize").value = creds.pageSize || 2000;
+      setSeg(creds.iconStyle || "dot");
       showMain();
       HL.stGet(HL.LAST_REFRESH_KEY).then(setSyncedLabel);
       HL.stGet(HL.REPORT_KEY).then(function (rep) {
