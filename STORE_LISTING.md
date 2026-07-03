@@ -29,9 +29,9 @@ WHAT YOU SEE
 - One-click shortcuts to track time and open reports in Harvest
 
 MAKE IT MATCH YOUR CONTRACT
-- Set your own weekly target hours, or let it follow your Harvest capacity
+- Set your full-time (100%) weekly hours, or let it follow your Harvest capacity
 - Pick which days you work, and mark any day as a half day (e.g. a free Friday afternoon)
-- The target is split across your working days, so part-time and 90% weeks add up correctly
+- Half days and days off scale your expected hours down from full-time, so part-time and 90% weeks add up correctly
 
 PRIVACY BY DESIGN
 - You authenticate with your own Harvest personal access token (created at id.getharvest.com/developers)
@@ -41,10 +41,10 @@ PRIVACY BY DESIGN
 - "Forget token & clear cached data" wipes everything at any time
 
 HOW EXPECTED HOURS ARE COMPUTED
-Expected time = your daily capacity applied to each working day, where daily capacity = weekly target
-/ number of working day-units. The weekly target defaults to your Harvest capacity but you can override
-it, and a half day counts as half a day-unit. Vacation and public holidays count as tracked time, so
-keep them logged in Harvest (most teams already do).
+Hours per week is your full-time (100%) figure; a full day expects that / 5. It defaults to your
+Harvest capacity but you can override it. Your working-days setting (full / half / off per day) then
+sets the actual expected hours, so a 90% week comes out below the full-time total. Vacation and public
+holidays count as tracked time, so keep them logged in Harvest (most teams already do).
 
 Not affiliated with Harvest. Harvest is a trademark of Iridesco LLC.
 

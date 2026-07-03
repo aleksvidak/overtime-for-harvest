@@ -50,11 +50,9 @@ var HL = (function () {
   function isWorkday(dow, workdays) {
     return dayWeight(dow, workdays) > 0;
   }
-  /* total day-units in a week: the divisor that spreads the weekly target
-     (e.g. full Mon–Thu + half Fri = 4.5) */
-  function workdayUnits(workdays) {
-    return (workdays || DEFAULT_WORKDAYS).reduce(function (n, x) { return n + toWeight(x); }, 0);
-  }
+  /* a 100% week is five full days: the weekly target is the full-time figure,
+     so a full day is always target ÷ 5 regardless of how many days you work */
+  var FULL_WEEK_DAYS = 5;
 
   /* ── Harvest API ── */
   async function hv(path, creds) { return hvRaw(API + path, creds); }
@@ -81,12 +79,14 @@ var HL = (function () {
     var now = new Date();
     var me = await hv("/users/me", creds);
     /* Harvest capacity is the fallback; a manual weekly target overrides it.
-       The target is spread evenly across the configured working days. */
+       weeklyTargetH is the full-time (100%) figure; a full day is target ÷ 5.
+       The working-days weights then set the actual expected hours per day, so a
+       part-time week (days at half or off) comes out below the full-time total. */
     var workdays = normalizeWorkdays(creds.workdays);
     var harvestWeeklyH = (me.weekly_capacity || 144000) / 3600;
     var weeklyTargetH = creds.weeklyTargetH > 0 ? creds.weeklyTargetH : harvestWeeklyH;
     /* dailyCapH is a full day's target; a day's expected hours = weight × this */
-    var dailyCapH = weeklyTargetH / workdayUnits(workdays);
+    var dailyCapH = weeklyTargetH / FULL_WEEK_DAYS;
 
     var company = null;
     try { company = await hv("/company", creds); } catch (e) { /* links fall back */ }
@@ -231,7 +231,6 @@ var HL = (function () {
     normalizeWorkdays: normalizeWorkdays,
     dayWeight: dayWeight,
     isWorkday: isWorkday,
-    workdayUnits: workdayUnits,
     hv: hv,
     syncReport: syncReport,
     computeBalance: computeBalance,
