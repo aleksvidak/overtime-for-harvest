@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Overtime for Harvest",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "See your overtime balance at a glance: tracked Harvest hours vs. expected, today's progress, and your week.",
   "permissions": ["storage", "alarms"],
   "host_permissions": ["https://api.harvestapp.com/*"],

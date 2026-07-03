@@ -33,9 +33,14 @@ See [PRIVACY.md](PRIVACY.md) for the full policy.
 
 ## How expected hours are computed
 
-Expected time = weekdays x your Harvest daily capacity (weekly capacity / 5). Vacation and public
-holidays count as tracked time, so keep them logged in Harvest. Closed years are cached locally;
-only the current year is refetched on sync.
+Each working day expects your daily capacity = weekly target / number of working day-units. The
+weekly target defaults to your Harvest weekly capacity, but you can override it in Settings ("Weekly
+target -> Hours per week") if your contracted hours differ. Working days default to full Monday–Friday
+and are configurable in Settings ("Working days"): tap a day to cycle full -> half -> off. A half day
+counts as 0.5 of a day-unit, so a 90% week of full Monday–Thursday plus a half Friday spreads the
+target across 4.5 day-units (a half day expects half the daily capacity). Vacation and public holidays
+count as tracked time, so keep them logged in Harvest. Closed years are cached locally; only the
+current year is refetched on sync.
 
 ---
 
