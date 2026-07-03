@@ -27,6 +27,33 @@ var HL = (function () {
     return Math.min(n, 2000);
   }
 
+  /* each weekday's share of a normal working day, indexed by Date.getDay()
+     (0 = Sunday … 6 = Saturday): 1 = full day, 0.5 = half day, 0 = off.
+     Default: full Monday–Friday. */
+  var DEFAULT_WORKDAYS = [0, 1, 1, 1, 1, 1, 0];
+  function toWeight(x) {
+    if (x === true) return 1;          /* tolerate the earlier boolean format */
+    var n = +x;
+    if (n >= 1) return 1;
+    if (n >= 0.5) return 0.5;
+    return 0;
+  }
+  function normalizeWorkdays(w) {
+    if (!Array.isArray(w) || w.length !== 7) return DEFAULT_WORKDAYS.slice();
+    var norm = w.map(toWeight);
+    /* never allow an all-off week: it would mean no expected hours ever */
+    return norm.some(function (x) { return x > 0; }) ? norm : DEFAULT_WORKDAYS.slice();
+  }
+  function dayWeight(dow, workdays) {
+    return toWeight((workdays || DEFAULT_WORKDAYS)[dow]);
+  }
+  function isWorkday(dow, workdays) {
+    return dayWeight(dow, workdays) > 0;
+  }
+  /* a 100% week is five full days: the weekly target is the full-time figure,
+     so a full day is always target ÷ 5 regardless of how many days you work */
+  var FULL_WEEK_DAYS = 5;
+
   /* ── Harvest API ── */
   async function hv(path, creds) { return hvRaw(API + path, creds); }
 
@@ -51,7 +78,15 @@ var HL = (function () {
   async function syncReport(creds, fullRefresh) {
     var now = new Date();
     var me = await hv("/users/me", creds);
-    var dailyCapH = (me.weekly_capacity || 144000) / 5 / 3600;
+    /* Harvest capacity is the fallback; a manual weekly target overrides it.
+       weeklyTargetH is the full-time (100%) figure; a full day is target ÷ 5.
+       The working-days weights then set the actual expected hours per day, so a
+       part-time week (days at half or off) comes out below the full-time total. */
+    var workdays = normalizeWorkdays(creds.workdays);
+    var harvestWeeklyH = (me.weekly_capacity || 144000) / 3600;
+    var weeklyTargetH = creds.weeklyTargetH > 0 ? creds.weeklyTargetH : harvestWeeklyH;
+    /* dailyCapH is a full day's target; a day's expected hours = weight × this */
+    var dailyCapH = weeklyTargetH / FULL_WEEK_DAYS;
 
     var company = null;
     try { company = await hv("/company", creds); } catch (e) { /* links fall back */ }
@@ -116,7 +151,8 @@ var HL = (function () {
     var report = {
       me: { first_name: me.first_name, last_name: me.last_name },
       company: company ? { name: company.name, full_domain: company.full_domain } : null,
-      from: from, to: to, dailyCapH: dailyCapH, months: months, days: days
+      from: from, to: to, dailyCapH: dailyCapH, months: months, days: days,
+      harvestWeeklyH: harvestWeeklyH, workdays: workdays
     };
 
     /* persist so the popup paints instantly and the badge can be drawn cold */
@@ -131,8 +167,7 @@ var HL = (function () {
     var totExp = 0;
     var d = parseISO(report.from), end = parseISO(report.to);
     while (d <= end) {
-      var dow = d.getDay();
-      if (dow !== 0 && dow !== 6) totExp += report.dailyCapH;
+      totExp += dayWeight(d.getDay(), report.workdays) * report.dailyCapH;
       d.setDate(d.getDate() + 1);
     }
     var totLog = 0;
@@ -192,6 +227,10 @@ var HL = (function () {
     stGet: stGet,
     stSet: stSet,
     clampPageSize: clampPageSize,
+    DEFAULT_WORKDAYS: DEFAULT_WORKDAYS,
+    normalizeWorkdays: normalizeWorkdays,
+    dayWeight: dayWeight,
+    isWorkday: isWorkday,
     hv: hv,
     syncReport: syncReport,
     computeBalance: computeBalance,

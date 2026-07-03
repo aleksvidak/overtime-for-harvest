@@ -1,7 +1,7 @@
-# Chrome Web Store submission kit: Overtime for Harvest v1.1.0
+# Chrome Web Store submission kit: Overtime for Harvest v1.2.0
 
 Everything to paste into https://chrome.google.com/webstore/devconsole when uploading
-`overtime-for-harvest-v1.1.0.zip`.
+`overtime-for-harvest-v1.2.0.zip`.
 
 ## Store listing
 
@@ -17,7 +17,7 @@ See your overtime balance at a glance: tracked Harvest hours vs. expected, today
 Overtime for Harvest answers one question the moment you click it: am I ahead or behind on my hours?
 
 It reads your own time entries through the official Harvest API and compares them with your expected
-working time (your Harvest weekly capacity, Monday to Friday), all the way back to your first tracked day.
+working time, all the way back to your first tracked day.
 
 WHAT YOU SEE
 - Your live overtime balance right on the toolbar icon, no click needed
@@ -28,6 +28,11 @@ WHAT YOU SEE
 - Your most recent tracked days and their over/under
 - One-click shortcuts to track time and open reports in Harvest
 
+MAKE IT MATCH YOUR CONTRACT
+- Set your full-time (100%) weekly hours, or let it follow your Harvest capacity
+- Pick which days you work, and mark any day as a half day (e.g. a free Friday afternoon)
+- Half days and days off scale your expected hours down from full-time, so part-time and 90% weeks add up correctly
+
 PRIVACY BY DESIGN
 - You authenticate with your own Harvest personal access token (created at id.getharvest.com/developers)
 - The token and cached hour totals are stored only in your browser (chrome.storage.local)
@@ -36,8 +41,10 @@ PRIVACY BY DESIGN
 - "Forget token & clear cached data" wipes everything at any time
 
 HOW EXPECTED HOURS ARE COMPUTED
-Expected time = weekdays x your Harvest daily capacity. Vacation and public holidays count as
-tracked time, so keep them logged in Harvest (most teams already do).
+Hours per week is your full-time (100%) figure; a full day expects that / 5. It defaults to your
+Harvest capacity but you can override it. Your working-days setting (full / half / off per day) then
+sets the actual expected hours, so a 90% week comes out below the full-time total. Vacation and public
+holidays count as tracked time, so keep them logged in Harvest (most teams already do).
 
 Not affiliated with Harvest. Harvest is a trademark of Iridesco LLC.
 

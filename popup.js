@@ -55,6 +55,50 @@
     rerun(true);
   });
 
+  /* blank/zero/invalid ⇒ null: fall back to Harvest capacity. Cap at 168h/week. */
+  function parseWeeklyTarget(v) {
+    var n = parseFloat(v);
+    if (!(n > 0)) return null;
+    return Math.min(n, 168);
+  }
+
+  /* ── working days picker: each day cycles full → half → off, indexed by
+     Date.getDay() (0 = Sun … 6 = Sat) ── */
+  var dayBtns = document.querySelectorAll("#dayPick button");
+  var WEIGHT = { full: 1, half: 0.5, off: 0 };
+  var NEXT = { full: "half", half: "off", off: "full" };
+  function stateOf(b) { return b.dataset.state || "off"; }
+  function setState(b, s) {
+    b.dataset.state = s;
+    b.classList.remove("full", "half", "off");
+    b.classList.add(s);
+  }
+  function totalUnits() {
+    var n = 0;
+    dayBtns.forEach(function (b) { n += WEIGHT[stateOf(b)]; });
+    return n;
+  }
+  function setWorkdays(w) {
+    var norm = (Array.isArray(w) && w.length === 7) ? w : HL.DEFAULT_WORKDAYS;
+    dayBtns.forEach(function (b) {
+      var wt = HL.dayWeight(+b.dataset.dow, norm);
+      setState(b, wt === 1 ? "full" : (wt === 0.5 ? "half" : "off"));
+    });
+  }
+  function getWorkdays() {
+    var w = [0, 0, 0, 0, 0, 0, 0];
+    dayBtns.forEach(function (b) { w[+b.dataset.dow] = WEIGHT[stateOf(b)]; });
+    return w;
+  }
+  dayBtns.forEach(function (b) {
+    b.addEventListener("click", function () {
+      setState(b, NEXT[stateOf(b)]);
+      /* keep at least a half-day somewhere: never let the week empty out */
+      if (totalUnits() === 0) setState(b, "full");
+    });
+  });
+  setWorkdays(HL.DEFAULT_WORKDAYS);
+
   /* ── settings: icon style, save, test, forget ── */
   var iconStyle = "dot";
   var segBtns = document.querySelectorAll("#iconStyleSeg button");
@@ -83,6 +127,8 @@
         /* blank token field means: keep the one already saved */
         token: $("token").value.trim() || (existing && existing.token) || "",
         pageSize: HL.clampPageSize($("pageSize").value),
+        weeklyTargetH: parseWeeklyTarget($("weeklyTarget").value),
+        workdays: getWorkdays(),
         iconStyle: iconStyle
       };
       if (!creds.accountId || !creds.token) {
@@ -133,6 +179,9 @@
       $("token").value = "";
       $("token").placeholder = "xxxxxxx.pt.xxxxxxxx...";
       $("pageSize").value = 2000;
+      $("weeklyTarget").value = "";
+      $("weeklyTarget").placeholder = "40";
+      setWorkdays(HL.DEFAULT_WORKDAYS);
       $("syncLabel").textContent = "";
       hasData = false;
       results.hidden = true;
@@ -151,6 +200,8 @@
       /* the saved token is never echoed back into the UI */
       $("token").placeholder = "saved · leave blank to keep";
       $("pageSize").value = creds.pageSize || 2000;
+      $("weeklyTarget").value = creds.weeklyTargetH || "";
+      setWorkdays(creds.workdays);
       setSeg(creds.iconStyle || "dot");
       showMain();
       HL.stGet(HL.LAST_REFRESH_KEY).then(setSyncedLabel);
@@ -214,6 +265,12 @@
     var days = rep.days || {};
     var todayIso = HL.iso(now);
 
+    /* show Harvest's own weekly capacity as the placeholder: it's what a blank
+       target falls back to */
+    if (rep.harvestWeeklyH > 0) {
+      $("weeklyTarget").placeholder = String(Math.round(rep.harvestWeeklyH * 100) / 100);
+    }
+
     /* hero */
     var balance = HL.computeBalance(rep);
     var balEl = $("balance");
@@ -233,22 +290,21 @@
 
     /* week chip: this week vs elapsed weekday capacity */
     var weekFrom = HL.weekStartIso();
-    var weekH = 0, weekExpDays = 0;
+    var weekH = 0, weekExpUnits = 0;
     var wd = HL.parseISO(weekFrom), lim = HL.parseISO(todayIso);
     while (wd <= lim) {
-      if (wd.getDay() !== 0 && wd.getDay() !== 6) weekExpDays++;
+      weekExpUnits += HL.dayWeight(wd.getDay(), rep.workdays);
       wd.setDate(wd.getDate() + 1);
     }
     Object.keys(days).forEach(function (k) { if (k >= weekFrom && k <= todayIso) weekH += days[k]; });
-    var weekDiff = weekH - weekExpDays * dailyCapH;
+    var weekDiff = weekH - weekExpUnits * dailyCapH;
     var chip = $("weekChip");
     chip.className = "chip " + (weekDiff >= 0 ? "up" : "down");
     chip.textContent = (weekDiff >= 0 ? "↑ " : "↓ ") + HL.fmtHM(Math.abs(weekDiff));
 
     /* today card */
     var todayH = days[todayIso] || 0;
-    var isWorkday = now.getDay() !== 0 && now.getDay() !== 6;
-    var todayExp = isWorkday ? dailyCapH : 0;
+    var todayExp = HL.dayWeight(now.getDay(), rep.workdays) * dailyCapH;
     if (todayExp > 0) {
       $("todayNums").innerHTML = "<b>" + HL.esc(HL.fmtHM(todayH)) + "</b> / " + HL.esc(HL.fmtHM(todayExp)) + " expected";
       $("todayBar").style.width = Math.min(100, todayH / todayExp * 100).toFixed(1) + "%";
@@ -274,7 +330,8 @@
     for (var i = 0; i < 7; i++) {
       var dayIso = HL.addDays(HL.parseISO(weekFrom), i);
       var h = days[dayIso] || 0;
-      week.push({ iso: dayIso, name: names[i], hours: h, weekend: i >= 5 });
+      var off = !HL.isWorkday(HL.parseISO(dayIso).getDay(), rep.workdays);
+      week.push({ iso: dayIso, name: names[i], hours: h, off: off });
       maxH = Math.max(maxH, h);
     }
     var pxPerH = 96 / maxH;
@@ -292,14 +349,14 @@
         bar.style.height = Math.max(6, w.hours * pxPerH).toFixed(1) + "px";
       } else {
         bar.style.height = "6px";
-        bar.classList.add(w.weekend ? "weekend" : "empty");
+        bar.classList.add(w.off ? "weekend" : "empty");
       }
       if (w.iso === todayIso) {
         if (w.hours > 0) bar.classList.add("today-bar");
         label.classList.add("today-label");
       } else if (w.iso > todayIso) {
-        label.classList.add(w.weekend ? "dimmer" : "dim");
-      } else if (w.weekend) {
+        label.classList.add(w.off ? "dimmer" : "dim");
+      } else if (w.off) {
         label.classList.add("dimmer");
       }
       bar.title = w.name + ": " + HL.fmtHM(w.hours);
@@ -325,7 +382,7 @@
     var fmtRecent = new Intl.DateTimeFormat("en", { weekday: "short", month: "short", day: "numeric" });
     recent.forEach(function (k) {
       var dd = HL.parseISO(k);
-      var exp = (dd.getDay() !== 0 && dd.getDay() !== 6) ? dailyCapH : 0;
+      var exp = HL.dayWeight(dd.getDay(), rep.workdays) * dailyCapH;
       var diff = days[k] - exp;
       var parts = fmtRecent.formatToParts(dd);
       var wk = "", mo = "", dnum = "";

@@ -123,6 +123,29 @@
       <button type="button" id="testConn">Test</button>
     </div>
 
+    <div class="eyebrow section-label">Weekly target</div>
+
+    <div class="row-field">
+      <div class="row-text">
+        <span class="row-title">Hours per week</span>
+        <span class="row-sub">Full-time (100%) hours &middot; blank uses your Harvest capacity</span>
+      </div>
+      <input type="number" id="weeklyTarget" min="0" max="168" step="0.5" placeholder="40">
+    </div>
+
+    <div class="eyebrow section-label">Working days</div>
+    <div class="hint">Tap a day to cycle full &rarr; half &rarr; off. A full day is your weekly hours
+      &divide; 5; half days and days off lower your expected hours below full-time.</div>
+    <div class="daypick" id="dayPick">
+      <button type="button" data-dow="1">Mon</button>
+      <button type="button" data-dow="2">Tue</button>
+      <button type="button" data-dow="3">Wed</button>
+      <button type="button" data-dow="4">Thu</button>
+      <button type="button" data-dow="5">Fri</button>
+      <button type="button" data-dow="6">Sat</button>
+      <button type="button" data-dow="0">Sun</button>
+    </div>
+
     <div class="eyebrow section-label">Sync</div>
 
     <div class="row-field">
